@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>日本酒検索</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>日本酒検索</h2>
+    <?php
+    require_once __DIR__ . '/db_config.php';
+    $name = $_GET['name'];
+    $spiciness = $_GET['spiciness'];
+    $refreshing = $_GET['refreshing'];
+    try {
+        $dbh = new PDO('mysql:host=localhost;dbname=日本酒;charset=utf8', $user, $pass);
+        $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        if (empty($name) && empty($spiciness) && empty($refreshing)) {
+            $sql = "SELECT * FROM `nihonsyu`";
+        } elseif (empty($name) && empty($spiciness)) {
+            $sql = "SELECT * FROM `nihonsyu` WHERE refreshing = '$refreshing' ";
+        } elseif (empty($name) && empty($refreshing)) {
+            $sql = "SELECT * FROM `nihonsyu` WHERE spiciness = '$spiciness'";
+        } elseif (empty($spiciness) && empty($refreshing)) {
+            $sql = "SELECT * FROM `nihonsyu` WHERE name like '%$name%'";
+        } elseif (empty($name)) {
+            $sql = "SELECT * FROM `nihonsyu` WHERE spiciness = '$spiciness' and refreshing = '$refreshing' ";
+        } elseif (empty($spiciness)) {
+            $sql = "SELECT * FROM `nihonsyu` WHERE name LIKE '%$name%' and refreshing = '$refreshing'";
+        } elseif (empty($refreshing)) {
+            $sql = "SELECT * FROM `nihonsyu` WHERE name LIKE '%$name%' and spiciness = '$spiciness'";
+        } else {
+            $sql = "SELECT * FROM `nihonsyu` WHERE name LIKE '%$name%' and spiciness = '$spiciness' and refreshing = '$refreshing'";
+        }
+        $stmt = $dbh->query($sql);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($result)) {
+            echo '<h1 style="color: red; font-size: 150px;"> そんな酒はない。</h1>';
+        } else {
+            echo '<table>' . PHP_EOL;
+            echo '<tr>' . PHP_EOL;
+            echo '<th>名前</th><th>種類</th><th>説明</th><th>甘口辛口</th><th>濃淡 </th><th>値段 </th>' . PHP_EOL;
+            echo '</tr>' . PHP_EOL;
+            foreach ($result as $row) {
+                echo '<tr>' . PHP_EOL;
+                echo '<td>' . htmlspecialchars($row['name'], ENT_QUOTES) . '</td>' . PHP_EOL;
+                echo '<td>' . htmlspecialchars($row['type'], ENT_QUOTES) . '</td>' . PHP_EOL;
+                echo '<td>' . nl2br(htmlspecialchars($row['explanation'], ENT_QUOTES) . '</td>' . PHP_EOL);
+                echo '<td>' .
+                    match ($row['spiciness']) {
+                        '1' => '辛口',
+                        '2' => 'やや辛口',
+                        '3' => '普通',
+                        '4' => 'やや甘口',
+                        '5' => '甘口',
+                    }
+                    . '</td>' . PHP_EOL;
+                echo '<td>' .
+                    match ($row['refreshing']) {
+                        '1' => '淡麗',
+                        '2' => 'やや淡麗',
+                        '3' => '普通',
+                        '4' => 'やや濃醇',
+                        '5' => '濃醇',
+                    }
+                    . '</td>' . PHP_EOL;
+                echo '<td>' . htmlspecialchars($row['price'], ENT_QUOTES) . '</td>' . PHP_EOL;
+                echo '</tr>' . PHP_EOL;
+            }
+            echo '</table>' . PHP_EOL;
+            $dbh = null;
+        }
+    } catch (PDOException $e) {
+        echo 'エラー発生: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES) . '<br>';
+        exit;
+    }
+    ?>
+</body>
+
+</html>

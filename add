@@ -1,0 +1,57 @@
+<?php
+require_once __DIR__ . '/db_config.php';
+$name = $_POST['name'];
+$type = $_POST['type'];
+$explanation = $_POST['explanation'];
+$spiciness = (int) $_POST['spiciness'];
+$refreshing = (int) $_POST['refreshing'];
+$price = (int) $_POST['price'];
+try {
+    $dbh = new PDO('mysql:host=localhost;dbname=日本酒;charest=utf8', $user, $pass);
+    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $sql = "INSERT INTO `nihonsyu` ( `name`, `type`, `explanation`, `spiciness`, `refreshing`, `price`) VALUES ( ?, ?, ?, ?, ?, ?)";
+    $stmt = $dbh->prepare($sql);
+    $stmt->bindValue(1, $name, PDO::PARAM_STR);
+    $stmt->bindValue(2, $type, PDO::PARAM_STR);
+    $stmt->bindValue(3, $explanation, PDO::PARAM_STR);
+    $stmt->bindValue(4, $spiciness, PDO::PARAM_INT);
+    $stmt->bindValue(5, $refreshing, PDO::PARAM_INT);
+    $stmt->bindValue(6, $price, PDO::PARAM_INT);
+    $stmt->execute();
+    $dbh = null;
+    echo '日本酒の登録が完了しました。';
+    echo '<table>' . PHP_EOL;
+    echo '<tr>' . PHP_EOL;
+    echo '<th>名前　</th><th>種類　</th><th>説明</th><th>甘口辛口</th><th>濃淡</th><th>値段</th>' . PHP_EOL;
+    echo '</tr>' . PHP_EOL;
+    {
+        echo '<tr>' . PHP_EOL;
+        echo '<td>' . htmlspecialchars($name, ENT_QUOTES) . '</td>' . PHP_EOL;
+        echo '<td>' . htmlspecialchars($type, ENT_QUOTES) . '</td>' . PHP_EOL;
+        echo '<td>' . nl2br(htmlspecialchars($explanation, ENT_QUOTES) . '</td>' . PHP_EOL);
+        echo '<td>' .
+            match ($spiciness) {
+                1 => '辛口',
+                2 => 'やや辛口',
+                3 => '普通',
+                4 => 'やや甘口',
+                5 => '甘口',
+            }
+            . '</td>' . PHP_EOL;
+        echo '<td>' .
+            match ($refreshing) {
+                1 => '淡麗',
+                2 => 'やや淡麗',
+                3 => '普通',
+                4 => 'やや濃醇',
+                5 => '濃醇',
+            }
+            . '</td>' . PHP_EOL;
+        echo '<td>' . htmlspecialchars($price, ENT_QUOTES) . '</td>' . PHP_EOL;
+        echo '</tr>' . PHP_EOL;
+    }
+    echo '</table>' . PHP_EOL;
+} catch (PDOException $e) {
+    echo 'エラー発生: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES) . '<br>';
+    exit;
+}
